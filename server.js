@@ -666,5 +666,5 @@ calendar.freebusy.query(
 
 app.listen(2000, () => {
     console.log("Server running")
-    console.log(process.env.REFRESH_TOKEN)
+    // console.log(process.env.REFRESH_TOKEN)
 })
