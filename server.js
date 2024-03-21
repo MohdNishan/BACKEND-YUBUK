@@ -186,6 +186,11 @@ app.post('/login', (req, res) => {
     const expirationtime = new Date()
     expirationtime.setMinutes(expirationtime.getMinutes() + 5)
 
+    if(!mobilenumber || mobilenumber.length < 10) {
+        // console.log(mobilenumber.length)
+        return res.status(401).json({message: "Enter a Valid Mobile Number"})
+    }
+
 
     con.query(` SELECT * FROM login WHERE mobile_number='${mobilenumber}' `, (err,result) => {
         if (err){
@@ -364,21 +369,12 @@ app.get("/user", verifyToken, (req, res) => {
 
 
 app.put("/user", verifyToken, (req, res) => {
-    const { id, Name, Email, Mobile_Number, DP, Address, Date_of_Birth } = req.body;
+    const { id, Name, Email, DP, Address, Date_of_Birth } = req.body;
 
-    con.query(` SELECT * FROM usersprofile WHERE Mobile_Number='${Mobile_Number}' AND id='${id}' `, (err,result) =>{
-        if(err){
-            res.status(500).json("Internal server error")
-        }
-        else{
-            if(result.length > 0){
-                res.status(400).json("Profile already exists with this mobile number")
-            }
-            else{
-                con.query(` UPDATE usersprofile SET
+    
+            con.query(` UPDATE usersprofile SET
             Name='${Name}',
             Email='${Email}',
-            Mobile_Number='${Mobile_Number}',
             DP='${DP}',
             Address='${Address}',
             Date_of_Birth='${Date_of_Birth}' 
@@ -391,10 +387,9 @@ app.put("/user", verifyToken, (req, res) => {
                 }
             })
             }
-        }
-    } )
+        )
             
-})
+
 
 
 // Business CRUD //
@@ -566,7 +561,7 @@ function verifyToken(req, res, next) {
     }
     
     jwt.verify(token, "secret", (err, decoded) => {
-        console.log(decoded)
+        // console.log(decoded)
         if (err) {
             res.send("AUTHENTICATION FAILED")
         }
@@ -593,68 +588,68 @@ function verifyToken(req, res, next) {
 
 
 
-const OAuth2Client = new OAuth2(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET
-)
+// const OAuth2Client = new OAuth2(
+//     process.env.CLIENT_ID,
+//     process.env.CLIENT_SECRET
+// )
 
-OAuth2Client.setCredentials({
-    refresh_token:process.env.REFRESH_TOKEN
-})
+// OAuth2Client.setCredentials({
+//     refresh_token:process.env.REFRESH_TOKEN
+// })
 
-const calendar = google.calendar({ version: 'v3', auth: OAuth2Client })
+// const calendar = google.calendar({ version: 'v3', auth: OAuth2Client })
 
-const EventStartTime = new Date()
-EventStartTime.setDate(EventStartTime.getDay() + 2)
+// const EventStartTime = new Date()
+// EventStartTime.setDate(EventStartTime.getDay() + 2)
 
-const EventEndTime = new Date()
-EventEndTime.setDate(EventEndTime.getDay() + 2)
-EventEndTime.setMinutes(EventEndTime.getMinutes() + 45)
+// const EventEndTime = new Date()
+// EventEndTime.setDate(EventEndTime.getDay() + 2)
+// EventEndTime.setMinutes(EventEndTime.getMinutes() + 45)
 
-const event = {
-    summary: 'Meeting with CEO',
-    location: 'Kalamassery, Kochi, Kerala',
-    description: 'Meeting with the CEO to discuss about the YUYBUK project',
-    start: {
-        dateTime: EventStartTime,
-        timeZone: 'Asia/Kolkata',
-    },
-    end: {
-        dateTime: EventEndTime,
-        timeZone: 'Asia/Kolkata'
-    },
-    colorId: 1,
-}
+// const event = {
+//     summary: 'Meeting with CEO',
+//     location: 'Kalamassery, Kochi, Kerala',
+//     description: 'Meeting with the CEO to discuss about the YUBUK project',
+//     start: {
+//         dateTime: EventStartTime,
+//         timeZone: 'Asia/Kolkata',
+//     },
+//     end: {
+//         dateTime: EventEndTime,
+//         timeZone: 'Asia/Kolkata'
+//     },
+//     colorId: 1,
+// }
 
-calendar.freebusy.query(
-    {
-        resource: {
-            timeMin: EventStartTime,
-            timeMax: EventEndTime,
-            timeZone: 'Asia/Kolkata',
-            items: [{ id: 'primary' }],
-        }
-    }, 
-        (err,res) => {
-            if(err)
-            return console.error('Free busy query error:', err)
+// calendar.freebusy.query(
+//     {
+//         resource: {
+//             timeMin: EventStartTime,
+//             timeMax: EventEndTime,
+//             timeZone: 'Asia/Kolkata',
+//             items: [{ id: 'primary' }],
+//         }
+//     }, 
+//         (err,res) => {
+//             if(err)
+//             return console.error('Free busy query error:', err)
 
-        const eventsArr = res.data.calendars.primary.busy
-        // console.log(eventsArr.length,'hh3uhefu')
+//         const eventsArr = res.data.calendars.primary.busy
+//         // console.log(eventsArr.length,'hh3uhefu')
 
-        if(eventsArr.length === 0 ){
-        return calendar.events.insert(
-            {calendarId: 'primary', resource: event}, 
-            err =>{
-                if (err)
-                return console.error('Event creation error:', err)
+//         if(eventsArr.length === 0 ){
+//         return calendar.events.insert(
+//             {calendarId: 'primary', resource: event}, 
+//             err =>{
+//                 if (err)
+//                 return console.error('Event creation error:', err)
 
-                return console.log('Calendar Event Created')
-            }
-        )}
+//                 return console.log('Calendar Event Created')
+//             }
+//         )}
 
-        return console.log('Sorry I am Busy')
-        })
+//         return console.log('Sorry I am Busy')
+//         })
 
 
 
