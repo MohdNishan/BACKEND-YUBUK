@@ -2,3 +2,5 @@
 # dependencies
 /node_modules
 .env
+/yubuk_firebase.json
+*.pdf

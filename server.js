@@ -9,28 +9,16 @@ const jwt = require("jsonwebtoken");
 const jsonParser = bodyParser.json();
 const twilio = require('twilio');
 const otplib = require('otplib');
-const multer = require('multer');
 const { google } = require('googleapis');
 const { OAuth2 } = google.auth
 const cors = require('cors')
-
-
-// const bcrypt = require("bcrypt");
-app.use(express.json());
-
-app.use(cors({ origin: "*" })); // enable CORS for all domains
-
-
-// let user = {
-//     name:"nishan",
-//     email : "abc@gmail.com",
-//     password : "112233"
-// }
-
+const multer = require('multer');
+const admin = require("firebase-admin")
 
 
 const mysql = require('mysql2');
 const { oauth2 } = require('googleapis/build/src/apis/oauth2');
+const { file } = require('googleapis/build/src/apis/file');
 const con = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -42,6 +30,80 @@ con.connect((err) => {
     if (err) throw err;
 })
 
+
+
+
+const serviceAccount = require("./yubuk_firebase.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://yubuk-d8b3e-default-rtdb.firebaseio.com",
+  storageBucket: "gs://yubuk-d8b3e.appspot.com"
+});
+
+const bucket = admin.storage().bucket();
+
+const storage = multer.memoryStorage();
+const upload = multer({storage: storage});
+
+
+// async function insertImageUrl(imageUrl) {
+//     try {
+//         con.query(` INSERT INTO usersprofile(DP) VALUES (${imageUrl}) `,[imageUrl])
+//         console.log("Image Url inserted into database")
+//     }
+//     catch (error) {
+//         console.log("Error inserting image Url into database", error)
+//     }
+// }
+
+
+
+
+app.post("/upload", upload.single("image"), async (req,res) => {
+    if (!req.file) {
+        return res.status(400).send("No file uploaded")
+    }
+
+    const metadata = {
+        metadata: {
+            firebaseStorageDownloadTokens: uuidv4()
+        },
+        contentType: req.file.mimetype,
+        cacheControl: "public, max-age=31536000"
+    };
+
+    const blob = bucket.file(req.file.originalname);
+    const blobStream = blob.createWriteStream({
+        metadata: metadata,
+        gzip:true
+    })
+
+    blobStream.on("error", err => {
+        return res.status(500).json({error: "Unable to upload image"})
+    })
+
+    blobStream.on("finish", () => {
+        const imageUrl = ` https://storage.googleapis.com/${bucket.name}/${blob.name} `;
+        req.imageUrl = imageUrl
+        // return res.status(201).json({imageUrl})
+        next();
+    })
+    blobStream.end(req.file.buffer)
+})
+
+
+
+app.use(express.json());
+
+app.use(cors({ origin: "*" })); // enable CORS for all domains
+
+
+// let user = {
+//     name:"nishan",
+//     email : "abc@gmail.com",
+//     password : "112233"
+// }
 
 
 // const dlt="DELETE FROM login WHERE id=0017f16c-68b8-4bcc-b03e-0fd9387aa149";
@@ -195,7 +257,7 @@ app.post('/login', (req, res) => {
     con.query(` SELECT * FROM login WHERE mobile_number='${mobilenumber}' `, (err,result) => {
         if (err){
             res.status(500).json("Internal Server Error")
-        }
+        }   
         else{
             if (result.length > 0){
 
@@ -204,12 +266,12 @@ app.post('/login', (req, res) => {
                         res.status(400).json({ message: "Unable to log in", error_message: err})
                     }
                     else{
-                        twilioacc.messages
-                            .create({
-                                body: ` Your OTP is: ${OTP} `,
-                                to: `+91${mobilenumber}`,
-                                from: "+12087824075",
-                            })
+                        // twilioacc.messages
+                        //     .create({
+                        //         body: ` Your OTP is: ${OTP} `,
+                        //         to: `+91${mobilenumber}`,
+                        //         from: "+12087824075",
+                        //     })
                         // res.json (`OTP sent to ${mobilenumber}`)
                         res.json({ message: `OTP sent to ${mobilenumber}` });
                     }
@@ -278,8 +340,8 @@ app.get('/authme',(req,res) =>{
                 res.send(result);
             }
             else{
-                res.send({message: "User not found"})
-                console.log("User not found")
+                res.status(400).send({message: "User not found"})
+                // console.log("User not found")
             }
         })
 })
@@ -316,13 +378,18 @@ app.get('/businesses/:userId',(req,res) => {
 })
 
 
-app.post("/user", verifyToken,(req, res) => {
+const uploading = multer()
+app.post("/user", verifyToken,uploading.none(), (req, res) => {
+    // console.log(req)
+    
 
     if (!req.body.Name || !req.body.Mobile_Number) {
+        // console.log(req)
         return res.json("Name and Mobile Number are required");
     }
     const { Name, Email, Mobile_Number, DP, Address, Date_of_Birth } = req.body;
-
+    // const DP = req.imageUrl
+ 
     con.query(` SELECT * FROM usersprofile WHERE Mobile_Number = '${Mobile_Number}' `, (err, results) => {
         if (err) {
             res.json({ message: 'Server Error', error_message: err })
@@ -338,9 +405,8 @@ app.post("/user", verifyToken,(req, res) => {
                     res.json({ message: 'Internal server error', error_message: err });
                 }
                 else {
-                    res.status(201).send("Profile Created")
+                    res.status(201).send({message: "Profile Created"})
                 }
-
             });
         }
     });
@@ -358,7 +424,7 @@ app.get("/user", verifyToken, (req, res) => {
             return;
         }
         if (result.length === 0) {
-            res.send("User not found")
+            res.status(400).send("User not found")
         }
         else {
             res.json(result[0]);
@@ -404,7 +470,6 @@ app.post("/business", verifyToken, (req, res) => {
         // if(err) {
         //     res.status(500).json("Internal server error")
         // }
-        // else {
             if(result.length > 0) {
                 res.status(400).json("Business with this name already exist")
             }
@@ -429,10 +494,6 @@ app.post("/business", verifyToken, (req, res) => {
                     }
                 })
             }
-            
-              
-            
-        // }
     })
 })
 
@@ -522,33 +583,33 @@ const decodeJwt = (token) => {
   };
 
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads'); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    },
-});
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'uploads'); 
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, Date.now() + '-' + file.originalname);
+//     },
+// });
 
-const upload = multer({ storage: storage });
+// const upload = multer({ storage: storage });
 
-app.post('/uploads', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-    }
+// app.post('/uploads', upload.single('file'), (req, res) => {
+//     if (!req.file) {
+//         return res.status(400).json({ error: 'No file uploaded' });
+//     }
 
-    const filePath = req.file.path;
+//     const filePath = req.file.path;
 
-    db.query('INSERT INTO usersprofile (DP) VALUES (?)', [filePath], (err, result) => {
-        if (err) {
-            console.error('Error uploading file:', err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.json({ message: 'File uploaded successfully' });
-        }
-    });
-});
+//     db.query('INSERT INTO usersprofile (DP) VALUES (?)', [filePath], (err, result) => {
+//         if (err) {
+//             console.error('Error uploading file:', err);
+//             res.status(500).json({ error: 'Internal Server Error' });
+//         } else {
+//             res.json({ message: 'File uploaded successfully' });
+//         }
+//     });
+// });
 
 
 
@@ -571,89 +632,6 @@ function verifyToken(req, res, next) {
         }
     })
 }
-// console.log(token)
-
-// app.get('/confirm', verifyToken, (req, res) => {
-//     console.log(req.token)
-//     con.query(`SELECT * FROM login WHERE email='${req.token.email}'`, (err, result, fields) => {
-//         if (err)
-//             throw err;
-//         // console.log(true,JSON.stringify(result))
-//         res.json(result);
-//     })
-// })
-
-
-
-
-
-
-// const OAuth2Client = new OAuth2(
-//     process.env.CLIENT_ID,
-//     process.env.CLIENT_SECRET
-// )
-
-// OAuth2Client.setCredentials({
-//     refresh_token:process.env.REFRESH_TOKEN
-// })
-
-// const calendar = google.calendar({ version: 'v3', auth: OAuth2Client })
-
-// const EventStartTime = new Date()
-// EventStartTime.setDate(EventStartTime.getDay() + 2)
-
-// const EventEndTime = new Date()
-// EventEndTime.setDate(EventEndTime.getDay() + 2)
-// EventEndTime.setMinutes(EventEndTime.getMinutes() + 45)
-
-// const event = {
-//     summary: 'Meeting with CEO',
-//     location: 'Kalamassery, Kochi, Kerala',
-//     description: 'Meeting with the CEO to discuss about the YUBUK project',
-//     start: {
-//         dateTime: EventStartTime,
-//         timeZone: 'Asia/Kolkata',
-//     },
-//     end: {
-//         dateTime: EventEndTime,
-//         timeZone: 'Asia/Kolkata'
-//     },
-//     colorId: 1,
-// }
-
-// calendar.freebusy.query(
-//     {
-//         resource: {
-//             timeMin: EventStartTime,
-//             timeMax: EventEndTime,
-//             timeZone: 'Asia/Kolkata',
-//             items: [{ id: 'primary' }],
-//         }
-//     }, 
-//         (err,res) => {
-//             if(err)
-//             return console.error('Free busy query error:', err)
-
-//         const eventsArr = res.data.calendars.primary.busy
-//         // console.log(eventsArr.length,'hh3uhefu')
-
-//         if(eventsArr.length === 0 ){
-//         return calendar.events.insert(
-//             {calendarId: 'primary', resource: event}, 
-//             err =>{
-//                 if (err)
-//                 return console.error('Event creation error:', err)
-
-//                 return console.log('Calendar Event Created')
-//             }
-//         )}
-
-//         return console.log('Sorry I am Busy')
-//         })
-
-
-
-
 
 
 
