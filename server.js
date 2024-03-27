@@ -60,37 +60,37 @@ const upload = multer({storage: storage});
 
 
 
-app.post("/upload", upload.single("image"), async (req,res) => {
-    if (!req.file) {
-        return res.status(400).send("No file uploaded")
-    }
+    // app.post("/upload", upload.single("image"), async (req,res) => {
+    //     if (!req.file) {
+    //         return res.status(400).send("No file uploaded")
+    //     }
 
-    const metadata = {
-        metadata: {
-            firebaseStorageDownloadTokens: uuidv4()
-        },
-        contentType: req.file.mimetype,
-        cacheControl: "public, max-age=31536000"
-    };
+    //     const metadata = {
+    //         metadata: {
+    //             firebaseStorageDownloadTokens: uuidv4()
+    //         },
+    //         contentType: req.file.mimetype,
+    //         cacheControl: "public, max-age=31536000"
+    //     };
 
-    const blob = bucket.file(req.file.originalname);
-    const blobStream = blob.createWriteStream({
-        metadata: metadata,
-        gzip:true
-    })
+    //     const blob = bucket.file(req.file.originalname);
+    //     const blobStream = blob.createWriteStream({
+    //         metadata: metadata,
+    //         gzip:true
+    //     })
 
-    blobStream.on("error", err => {
-        return res.status(500).json({error: "Unable to upload image"})
-    })
+    //     blobStream.on("error", err => {
+    //         return res.status(500).json({error: "Unable to upload image"})
+    //     })
 
-    blobStream.on("finish", () => {
-        const imageUrl = ` https://storage.googleapis.com/${bucket.name}/${blob.name} `;
-        req.imageUrl = imageUrl
-        // return res.status(201).json({imageUrl})
-        next();
-    })
-    blobStream.end(req.file.buffer)
-})
+    //     blobStream.on("finish", () => {
+    //         const imageUrl = ` https://storage.googleapis.com/${bucket.name}/${blob.name} `;
+    //         req.imageUrl = imageUrl
+    //         return res.status(201).json({imageUrl})
+    //         next();
+    //     })
+    //     blobStream.end(req.file.buffer)
+    // })
 
 
 
@@ -378,18 +378,53 @@ app.get('/businesses/:userId',(req,res) => {
 })
 
 
-const uploading = multer()
-app.post("/user", verifyToken,uploading.none(), (req, res) => {
-    // console.log(req)
+
+const uploadImage = (req,callback) => {
+    if (!req.file){
+        return callback("No file uploaded");
+    }
     
+    const metadata = {
+        metadata: {
+            firebaseStorageDownloadTokens: uuidv4()
+        },
+        contentType: req.file.mimetype,
+        cacheControl: "public, max-age=31536000"
+    };
+
+    const blob = bucket.file(req.file.originalname);
+    const blobStream = blob.createWriteStream({
+        metadata: metadata,
+        gzip:true
+    })
+
+    blobStream.on("error", err => {
+        return callback("Unable to upload image");
+    });
+
+        blobStream.on("finish", () => {
+        const imageUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+        callback(null, imageUrl);
+    });
+        // return res.status(201).json({imageUrl})
+        // console.log(imageUrl)
+    
+    blobStream.end(req.file.buffer)
+    // return imageUrl
+}
+
+
+const uploading = multer()
+
+app.post("/user", verifyToken, uploading.single("DP"), (req, res) => {
+
 
     if (!req.body.Name || !req.body.Mobile_Number) {
-        // console.log(req)
         return res.json("Name and Mobile Number are required");
     }
-    const { Name, Email, Mobile_Number, DP, Address, Date_of_Birth } = req.body;
-    // const DP = req.imageUrl
- 
+
+    const { Name, Email, Mobile_Number, Address, Date_of_Birth } = req.body;
+
     con.query(` SELECT * FROM usersprofile WHERE Mobile_Number = '${Mobile_Number}' `, (err, results) => {
         if (err) {
             res.json({ message: 'Server Error', error_message: err })
@@ -399,8 +434,12 @@ app.post("/user", verifyToken,uploading.none(), (req, res) => {
             res.status(400).json("Profile Already Exists")
         }
         else {
+            uploadImage(req, (error,imageUrl) => {
+                if(error) {
+                    return res.status(500).json({error})
+                }
             con.query(` INSERT INTO usersprofile(id,Name,Email,Mobile_Number,DP,Address,Date_of_Birth)
-            VALUES('${uuidv4()}','${Name}','${Email}','${Mobile_Number}','${DP}','${Address}','${Date_of_Birth}')`, (err, result) => {
+            VALUES('${uuidv4()}','${Name}','${Email}','${Mobile_Number}','${imageUrl}','${Address}','${Date_of_Birth}')`, (err, result) => {
                 if (err) {
                     res.json({ message: 'Internal server error', error_message: err });
                 }
@@ -408,6 +447,7 @@ app.post("/user", verifyToken,uploading.none(), (req, res) => {
                     res.status(201).send({message: "Profile Created"})
                 }
             });
+        })
         }
     });
 });
@@ -460,11 +500,11 @@ app.put("/user", verifyToken, (req, res) => {
 
 // Business CRUD //
 
-app.post("/business", verifyToken, (req, res) => {
+app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
     // if(!req.body.Business_name || !req.body.Opening_hours || !req.body.Location || !req.body.Contact_number){
     //     return res.json({message: "All fields are required"});
     // }
-    const { Business_Name, Email, Website, Opening_hours, Location, Image, Contact_Number,user_id } = req.body;
+    const { Business_Name, Email, Website, Opening_hours, Location, Contact_Number,user_id } = req.body;
     
     con.query(` SELECT * FROM businessprofile WHERE Business_Name='${Business_Name}' `, (err,result) => {
         // if(err) {
@@ -475,6 +515,10 @@ app.post("/business", verifyToken, (req, res) => {
             }
             if (result.length === 0){
                 // console.log(result)
+                uploadImage(req, (error,imageUrl) => {
+                    if(error) {
+                        return res.status(500).json({error})
+                    }
                 con.query(` INSERT INTO businessprofile(id,Business_Name,Email,Website,Opening_hours,Location,Image,Contact_Number,user_id) 
                 VALUES('${uuidv4()}',
                 '${Business_Name}',
@@ -482,7 +526,7 @@ app.post("/business", verifyToken, (req, res) => {
                 '${Website}',
                 '${Opening_hours}',
                 '${Location}',
-                '${Image}',
+                '${imageUrl}',
                 '${Contact_Number}',
                 '${user_id}') `, (err, result) => {
                     // console.log(result,err)
@@ -493,6 +537,7 @@ app.post("/business", verifyToken, (req, res) => {
                         res.json("Business Added")
                     }
                 })
+            })
             }
     })
 })
