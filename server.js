@@ -37,8 +37,7 @@ const serviceAccount = require("./yubuk_firebase.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://yubuk-d8b3e-default-rtdb.firebaseio.com",
-  storageBucket: "gs://yubuk-d8b3e.appspot.com"
+  storageBucket: "gs://yubuk-b1075.appspot.com"
 });
 
 const bucket = admin.storage().bucket();
@@ -47,191 +46,12 @@ const storage = multer.memoryStorage();
 const upload = multer({storage: storage});
 
 
-// async function insertImageUrl(imageUrl) {
-//     try {
-//         con.query(` INSERT INTO usersprofile(DP) VALUES (${imageUrl}) `,[imageUrl])
-//         console.log("Image Url inserted into database")
-//     }
-//     catch (error) {
-//         console.log("Error inserting image Url into database", error)
-//     }
-// }
-
-
-
-
-    // app.post("/upload", upload.single("image"), async (req,res) => {
-    //     if (!req.file) {
-    //         return res.status(400).send("No file uploaded")
-    //     }
-
-    //     const metadata = {
-    //         metadata: {
-    //             firebaseStorageDownloadTokens: uuidv4()
-    //         },
-    //         contentType: req.file.mimetype,
-    //         cacheControl: "public, max-age=31536000"
-    //     };
-
-    //     const blob = bucket.file(req.file.originalname);
-    //     const blobStream = blob.createWriteStream({
-    //         metadata: metadata,
-    //         gzip:true
-    //     })
-
-    //     blobStream.on("error", err => {
-    //         return res.status(500).json({error: "Unable to upload image"})
-    //     })
-
-    //     blobStream.on("finish", () => {
-    //         const imageUrl = ` https://storage.googleapis.com/${bucket.name}/${blob.name} `;
-    //         req.imageUrl = imageUrl
-    //         return res.status(201).json({imageUrl})
-    //         next();
-    //     })
-    //     blobStream.end(req.file.buffer)
-    // })
 
 
 
 app.use(express.json());
 
 app.use(cors({ origin: "*" })); // enable CORS for all domains
-
-
-// let user = {
-//     name:"nishan",
-//     email : "abc@gmail.com",
-//     password : "112233"
-// }
-
-
-// const dlt="DELETE FROM login WHERE id=0017f16c-68b8-4bcc-b03e-0fd9387aa149";
-// con.query(dlt,(err)=>{
-//     if(err)
-//     throw err;
-// // console.log("Deleted")
-// })
-
-// const update="UPDATE login SET email='abc123@gmail.com' WHERE id=uuid()";
-// con.query(update,(err)=>{
-//     if(err)
-//     throw err;  
-// console.log("Updated")
-// })
-
-// con.query(
-//     "SELECT * FROM login",
-//     function(err,res){
-//         console.log(res);
-//     })
-
-
-
-// const addfield="ALTER TABLE businessprofile ADD COLUMN Location_url VARCHAR(256)";
-// con.query(addfield,(err,result) =>{
-//     if(err){
-//         throw err;
-//     }
-//     console.log("Field Added")
-// })
-
-
-// const dltfield="ALTER TABLE login DROP COLUMN password";
-// con.query(dltfield,(err,result) =>{
-//     if(err){
-//         throw err;
-//     }
-//     console.log("Field Deleted")
-// })
-
-
-// bcrypt.hash(password1, saltrounds,(err, hash) => {
-//     // Store hash in your password DB.
-// })
-
-// bcrypt.compare(password1,(err, result) => {
-//     // result == true
-// });
-// bcrypt.compare(password2,(err, result) => {
-//     // result == false
-// });
-
-
-
-
-// app.post('/signup',async(req,res) => {
-//     if(req.body.username==undefined || req.body.email==undefined || req.body.password==undefined){
-//         res.json("All Fields are required");
-//     }
-
-//     const {username,email,password} = req.body;
-//     const hash = await bcrypt.hash(password,10)
-
-//     const check = ` SELECT * FROM login WHERE email = '${email}' `;
-//     con.query(check, [email], (err, results) => {   
-//     if (err) {
-//       res.send('Server Error');
-//     } else {
-//       if (results.length > 0) {
-//         res.json({message:"Email already exist"})
-//       } else {
-//         const insert = ` INSERT INTO login (id,username,email,password) VALUES('${uuidv4()}','${username}','${email}','${hash}') `;
-//         con.query(insert, [email], (err,result) => {
-//             console.log({err,result})
-//           if (err) {
-//             res.json({message:"Server error"});
-//           } else {
-//             res.json({message:"User registered successfully"})
-//           }
-//         });
-//       }
-//     }
-//   });
-// });
-
-
-
-
-
-
-// app.post('/login',jsonParser,(req,res) =>{
-//     console.log(true,req.body.email,req.body.password)
-//     if(req.body.email==undefined || req.body.password==undefined){
-//         res.send("All Fields are required");
-//     }
-//     const {email, password} = req.body;
-//     const qr = ` SELECT * FROM login WHERE email='${email}' `;
-//     con.query(qr,(err,result) =>{
-//         console.log(result)
-//         if(err || result.length==0){
-//             return res.send("Login Failed")
-//         }
-//         else{
-//             const resp = {
-//                 id : result[0].id,
-//                 email : result[0].email
-//             }
-//             bcrypt.compare(req.body.password, result[0].password, (err,response) => {
-//                 if(err){
-//                     return res.json("Error");
-//                 }
-//                 if(response){
-//                     const token = jwt.sign(resp,"secret",{expiresIn:"10m"});
-//                     res.json({auth:true,token:token});
-//                 }
-//                 return res.json({auth:"Incorrect password"});
-//             })
-//         } 
-//     })
-// })
-
-
-
-
-
-
-
 
 
 const twilioacc = twilio(
@@ -561,6 +381,8 @@ app.get("/business", verifyToken, (req, res) => {
 })
 
 
+    
+
 
 
 app.put("/business/:businessId", verifyToken, (req, res) => {
@@ -626,38 +448,6 @@ const decodeJwt = (token) => {
       console.log("jwt decode error", err.message);
     }
   };
-
-
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, 'uploads'); 
-//     },
-//     filename: (req, file, cb) => {
-//         cb(null, Date.now() + '-' + file.originalname);
-//     },
-// });
-
-// const upload = multer({ storage: storage });
-
-// app.post('/uploads', upload.single('file'), (req, res) => {
-//     if (!req.file) {
-//         return res.status(400).json({ error: 'No file uploaded' });
-//     }
-
-//     const filePath = req.file.path;
-
-//     db.query('INSERT INTO usersprofile (DP) VALUES (?)', [filePath], (err, result) => {
-//         if (err) {
-//             console.error('Error uploading file:', err);
-//             res.status(500).json({ error: 'Internal Server Error' });
-//         } else {
-//             res.json({ message: 'File uploaded successfully' });
-//         }
-//     });
-// });
-
-
-
 
 
 function verifyToken(req, res, next) {

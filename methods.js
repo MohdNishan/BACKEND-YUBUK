@@ -22,13 +22,13 @@ const { initializeApp } = require("firebase/app");
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyB0uR-tt8hTyEnhcxYQ2IpCB3u4IAdyDAE",
-  authDomain: "yubuk-d8b3e.firebaseapp.com",
-  projectId: "yubuk-d8b3e",
-  storageBucket: "yubuk-d8b3e.appspot.com",
-  messagingSenderId: "638726075081",
-  appId: "1:638726075081:web:dd8f40646ac8e794da9318",
-  measurementId: "G-L0R1T10KBH"
+  apiKey: "AIzaSyB3NYjghgVwPWMJhlQcl14B2HYS5fomqtQ",
+  authDomain: "yubuk-b1075.firebaseapp.com",
+  projectId: "yubuk-b1075",
+  storageBucket: "yubuk-b1075.appspot.com",
+  messagingSenderId: "852724056379",
+  appId: "1:852724056379:web:d3aa07fb07201d27a2771e",
+  measurementId: "G-BQBJBN8GMY"
 };
 
 // Initialize Firebase

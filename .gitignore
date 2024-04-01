@@ -4,3 +4,4 @@
 .env
 /yubuk_firebase.json
 *.pdf
+/learning.js
