@@ -358,7 +358,7 @@ app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
                     }
                 })
             })
-            }
+        }
     })
 })
 
@@ -381,7 +381,7 @@ app.get("/business", verifyToken, (req, res) => {
 })
 
 
-    
+
 
 
 
