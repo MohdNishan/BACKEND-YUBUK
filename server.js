@@ -238,7 +238,6 @@ const uploading = multer()
 
 app.post("/user", verifyToken, uploading.single("DP"), (req, res) => {
 
-
     if (!req.body.Name || !req.body.Mobile_Number) {
         return res.json("Name and Mobile Number are required");
     }
@@ -296,7 +295,6 @@ app.get("/user", verifyToken, (req, res) => {
 
 app.put("/user", verifyToken, (req, res) => {
     const { id, Name, Email, DP, Address, Date_of_Birth } = req.body;
-
     
             con.query(` UPDATE usersprofile SET
             Name='${Name}',
@@ -355,13 +353,12 @@ app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
                     }
                     else {
                         res.json("Business Added")
-                    }
+                    }   
                 })
             })
         }
     })
 })
-
 
 
 app.get("/business", verifyToken, (req, res) => {
@@ -379,10 +376,6 @@ app.get("/business", verifyToken, (req, res) => {
         }
     })
 })
-
-
-
-
 
 
 app.put("/business/:businessId", verifyToken, (req, res) => {
@@ -411,8 +404,6 @@ app.put("/business/:businessId", verifyToken, (req, res) => {
             }
         
     )
-
-
 
 
 app.delete("/business/:businessId", verifyToken, (req, res) => {
@@ -467,9 +458,6 @@ function verifyToken(req, res, next) {
         }
     })
 }
-
-
-
 
 
 app.listen(2000, () => {
