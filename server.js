@@ -239,7 +239,7 @@ const uploading = multer()
 app.post("/user", verifyToken, uploading.single("DP"), (req, res) => {
 
     if (!req.body.Name || !req.body.Mobile_Number) {
-        return res.json("Name and Mobile Number are required");
+        return res.status(204).json("Name and Mobile Number are required");
     }
 
     const { Name, Email, Mobile_Number, Address, Date_of_Birth } = req.body;
@@ -319,10 +319,8 @@ app.put("/user", verifyToken, (req, res) => {
 // Business CRUD //
 
 app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
-    // if(!req.body.Business_name || !req.body.Opening_hours || !req.body.Location || !req.body.Contact_number){
-    //     return res.json({message: "All fields are required"});
-    // }
-    const { Business_Name, Email, Website, Opening_hours, Location, Contact_Number,user_id } = req.body;
+   
+    const { Business_Name, Email, Website, Opening_hours, Location, Contact_Number, user_id } = req.body;
     
     con.query(` SELECT * FROM businessprofile WHERE Business_Name='${Business_Name}' `, (err,result) => {
         // if(err) {
@@ -332,7 +330,6 @@ app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
                 res.status(400).json("Business with this name already exist")
             }
             if (result.length === 0){
-                // console.log(result)
                 uploadImage(req, (error,imageUrl) => {
                     if(error) {
                         return res.status(500).json({error})
@@ -347,7 +344,6 @@ app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
                 '${imageUrl}',
                 '${Contact_Number}',
                 '${user_id}') `, (err, result) => {
-                    // console.log(result,err)
                     if (err) {
                         res.status(500).json({message:"Internal server error", error_message:err})
                     }
@@ -384,24 +380,24 @@ app.put("/business/:businessId", verifyToken, (req, res) => {
 
     const { Business_Name, Email, Website, Opening_hours, Location, Image, Contact_Number } = req.body;
 
-                con.query(` UPDATE businessprofile SET
-                Business_Name='${Business_Name}',
-                Email='${Email}',
-                Website='${Website}',   
-                Opening_hours='${Opening_hours}',
-                Location='${Location}',
-                Image='${Image}',
-                Contact_Number='${Contact_Number}'
-                WHERE id = '${businessId}' `, (err, result) => {
-                    if (err) {
-                        res.status(500).json({ message: "Internal server error", error_message: err })
-                        console.log(err)
-                    }
-                    else {
-                        res.json("Updated Successfully")
-                    }
-                })
-            }
+            con.query(` UPDATE businessprofile SET
+            Business_Name='${Business_Name}',
+            Email='${Email}',
+            Website='${Website}',   
+            Opening_hours='${Opening_hours}',
+            Location='${Location}',
+            Image='${Image}',
+            Contact_Number='${Contact_Number}'
+            WHERE id = '${businessId}' `, (err, result) => {
+                if (err) {
+                    res.status(500).json({ message: "Internal server error", error_message: err })
+                    console.log(err)
+                }
+                else {
+                    res.json("Updated Successfully")
+                }
+            })
+        }
         
     )
 
