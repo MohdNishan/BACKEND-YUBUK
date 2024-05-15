@@ -223,7 +223,7 @@ const uploadImage = (req,callback) => {
     });
 
         blobStream.on("finish", () => {
-        const imageUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+        const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${blob.name}?alt=media&token=07a04d7b-db76-488d-9e4c-ebcae9a82d00`;
         callback(null, imageUrl);
     });
         // return res.status(201).json({imageUrl})
@@ -234,7 +234,7 @@ const uploadImage = (req,callback) => {
 }
 
 
-const uploading = multer()
+const uploading = multer();
 
 app.post("/user", verifyToken, uploading.single("DP"), (req, res) => {
 
@@ -292,14 +292,17 @@ app.get("/user", verifyToken, (req, res) => {
 })
 
 
+app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
+    const { id, Name, Email, Address, Date_of_Birth } = req.body;
 
-app.put("/user", verifyToken, (req, res) => {
-    const { id, Name, Email, DP, Address, Date_of_Birth } = req.body;
-    
-            con.query(` UPDATE usersprofile SET
+    uploadImage(req,(err,imageUrl) => {
+        if (err) {
+            return res.status(500).json({err})
+        }
+        con.query(` UPDATE usersprofile SET
             Name='${Name}',
             Email='${Email}',
-            DP='${DP}',
+            DP='${imageUrl}',
             Address='${Address}',
             Date_of_Birth='${Date_of_Birth}' 
             WHERE id ='${id}' `, (err, result) => {
@@ -309,9 +312,10 @@ app.put("/user", verifyToken, (req, res) => {
                 else {
                     res.send("Profile Updated Successfully")
                 }
-            })
             }
         )
+    })
+})
             
 
 
@@ -374,11 +378,17 @@ app.get("/business", verifyToken, (req, res) => {
 })
 
 
-app.put("/business/:businessId", verifyToken, (req, res) => {
+app.put("/business/:businessId", verifyToken, uploading.single("Image"),(req, res) => {
 
     const businessId = req.params.businessId
 
-    const { Business_Name, Email, Website, Opening_hours, Location, Image, Contact_Number } = req.body;
+    const { Business_Name, Email, Website, Opening_hours, Location, Contact_Number } = req.body;
+
+    if (!req.file) {
+        return res.status(400).json({ message: "No File Uploaded" });
+    }
+    
+    const imageUrl = req.file.path
 
             con.query(` UPDATE businessprofile SET
             Business_Name='${Business_Name}',
@@ -386,7 +396,7 @@ app.put("/business/:businessId", verifyToken, (req, res) => {
             Website='${Website}',   
             Opening_hours='${Opening_hours}',
             Location='${Location}',
-            Image='${Image}',
+            Image='${imageUrl}',
             Contact_Number='${Contact_Number}'
             WHERE id = '${businessId}' `, (err, result) => {
                 if (err) {
@@ -398,7 +408,6 @@ app.put("/business/:businessId", verifyToken, (req, res) => {
                 }
             })
         }
-        
     )
 
 
