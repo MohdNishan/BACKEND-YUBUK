@@ -226,11 +226,8 @@ const uploadImage = (req,callback) => {
         const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${blob.name}?alt=media&token=07a04d7b-db76-488d-9e4c-ebcae9a82d00`;
         callback(null, imageUrl);
     });
-        // return res.status(201).json({imageUrl})
-        // console.log(imageUrl)
     
     blobStream.end(req.file.buffer)
-    // return imageUrl
 }
 
 
@@ -299,6 +296,7 @@ app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
         if (err) {
             return res.status(500).json({err})
         }
+        console.log(imageUrl)
         con.query(` UPDATE usersprofile SET
             Name='${Name}',
             Email='${Email}',
