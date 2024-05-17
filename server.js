@@ -311,10 +311,9 @@ app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
                     res.send("Profile Updated Successfully")
                 }
             }
-        )
+        )   
     })
 })
-            
 
 
 
