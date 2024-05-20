@@ -310,7 +310,7 @@ app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
                 else {
                     res.send("Profile Updated Successfully")
                 }
-            }
+            }   
         )   
     })
 })
