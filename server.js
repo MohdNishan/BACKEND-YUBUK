@@ -200,9 +200,10 @@ app.get('/businesses/:userId',(req,res) => {
 
 
 const uploadImage = (req,callback) => {
-    if (!req.file){
-        return callback("No file uploaded");
-    }
+    // console.log(req.file)
+    // if (!req.file){
+    //     return callback("No file uploaded");
+    // }
     
     const metadata = {
         metadata: {
@@ -291,13 +292,15 @@ app.get("/user", verifyToken, (req, res) => {
 
 app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
     const { id, Name, Email, Address, Date_of_Birth } = req.body;
-
+    
+    if (req.file) {
     uploadImage(req,(err,imageUrl) => {
         if (err) {
+            // console.log(err)
             return res.status(500).json({err})
         }
-        console.log(imageUrl)
-        con.query(` UPDATE usersprofile SET
+        // console.log(imageUrl)
+        con.query(`UPDATE usersprofile SET
             Name='${Name}',
             Email='${Email}',
             DP='${imageUrl}',
@@ -305,14 +308,32 @@ app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
             Date_of_Birth='${Date_of_Birth}' 
             WHERE id ='${id}' `, (err, result) => {
                 if (err) {
-                    res.send("Internal Server Error")
+                    // console.log(err)
+                    res.status(500).json({message:"Internal server error", error_message:err})
                 }
                 else {
                     res.send("Profile Updated Successfully")
                 }
             }   
-        )   
-    })
+        )  
+    })}
+    else{
+        con.query(`UPDATE usersprofile SET
+        Name='${Name}',
+        Email='${Email}',
+        Address='${Address}',
+        Date_of_Birth='${Date_of_Birth}' 
+        WHERE id ='${id}' `, (err, result) => {
+            if (err) {
+                console.log(err)
+                res.send("Internal Server Error")
+            }
+            else {
+                res.send("Profile Updated Successfully")
+            }
+        }   
+    )  
+    }
 })
 
 
@@ -320,7 +341,7 @@ app.put("/user", verifyToken, uploading.single("DP"),(req, res) => {
 // Business CRUD //
 
 app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
-   
+
     const { Business_Name, Email, Website, Opening_hours, Location, Contact_Number, user_id } = req.body;
     
     con.query(` SELECT * FROM businessprofile WHERE Business_Name='${Business_Name}' `, (err,result) => {
@@ -335,6 +356,8 @@ app.post("/business", verifyToken, uploading.single("Image"),(req, res) => {
                     if(error) {
                         return res.status(500).json({error})
                     }
+                    // console.log(result)
+                    // console.log(imageUrl)
                 con.query(` INSERT INTO businessprofile(id,Business_Name,Email,Website,Opening_hours,Location,Image,Contact_Number,user_id) 
                 VALUES('${uuidv4()}',
                 '${Business_Name}',
@@ -381,16 +404,15 @@ app.put("/business/:businessId", verifyToken, uploading.single("Image"),(req, re
 
     const { Business_Name, Email, Website, Opening_hours, Location, Contact_Number } = req.body;
 
-    if (!req.file) {
-        return res.status(400).json({ message: "No File Uploaded" });
-    }
-    
-    const imageUrl = req.file.path
-
+    if (req.file) {
+        uploadImage(req,(err,imageUrl) => {
+            if (err) {
+                return res.status(500).json({err})
+            }
             con.query(` UPDATE businessprofile SET
             Business_Name='${Business_Name}',
             Email='${Email}',
-            Website='${Website}',   
+            Website='${Website}',
             Opening_hours='${Opening_hours}',
             Location='${Location}',
             Image='${imageUrl}',
@@ -401,11 +423,30 @@ app.put("/business/:businessId", verifyToken, uploading.single("Image"),(req, re
                     console.log(err)
                 }
                 else {
-                    res.json("Updated Successfully")
+                    res.send("Updated Successfully")
+                }
+            })
+        })
+    }
+    else{
+        con.query(` UPDATE businessprofile SET
+            Business_Name='${Business_Name}',
+            Email='${Email}',
+            Website='${Website}',
+            Opening_hours='${Opening_hours}',
+            Location='${Location}',
+            Contact_Number='${Contact_Number}'
+            WHERE id = '${businessId}' `, (err, result) => {
+                if (err) {
+                    res.status(500).json({ message: "Internal server error", error_message: err })
+                    console.log(err)
+                }
+                else {
+                    res.send("Updated Successfully")
                 }
             })
         }
-    )
+})
 
 
 app.delete("/business/:businessId", verifyToken, (req, res) => {
