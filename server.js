@@ -3,8 +3,8 @@ require('dotenv').config()
 
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
-let express = require('express');
-let app = express();
+const express = require('express');
+const app = express();
 const jwt = require("jsonwebtoken");
 const jsonParser = bodyParser.json();
 const twilio = require('twilio');
@@ -51,7 +51,7 @@ const upload = multer({storage: storage});
 
 app.use(express.json());
 
-app.use(cors({ origin: "*" })); // enable CORS for all domains
+app.use(cors({ origin: "*" }));
 
 
 const twilioacc = twilio(
